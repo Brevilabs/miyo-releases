@@ -75,15 +75,10 @@ Parse `results[]`; each entry is `{ path, content }`. `count` is files returned,
 
 ## The `content` field is a snippet, not the file
 
-Each result's `content` is the matching excerpt(s), not the whole document. To get
-full text:
-
-- **Read it off disk** (the local-agent path). Results are the user's real files.
-  Resolve the folder's `absolute_path` from `miyo folders`, join it with the result
-  `path`, and read the file directly.
-- **Use the remote MCP `read_file` tool** if you're a cloud client driving Miyo over
-  the relay — it takes a path and returns full content (text, or base64 for images).
-  See [remote-mcp.md](remote-mcp.md). (The CLI itself has no read command.)
+Each result's `content` is the matching excerpt(s), not the whole document. The CLI
+has no read command — to get full text, **read the file off disk**: results are the
+user's real files, so resolve the folder's `absolute_path` from `miyo folders`, join
+it with the result `path`, and open the file directly.
 
 ## Recipes
 

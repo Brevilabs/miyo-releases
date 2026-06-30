@@ -1,13 +1,15 @@
 ---
 name: miyo
 description: >-
-  Search the user's personal knowledge base from the command line with the local
-  `miyo` CLI — their own notes and documents, and their saved ChatGPT / Claude
-  conversations. Use whenever a request could be answered from something the user
-  wrote, saved, or discussed before: "what did I note about X", "find my doc on
-  Y", "what did I ask ChatGPT about Z", "summarize my notes on …", or when they
-  want to list or inspect their indexed files and folders, or convert a PDF to
-  text. Commands: `miyo search`, `miyo files`, `miyo folders`, `miyo parse`.
+  Search and read the user's personal knowledge base from the command line with
+  the local `miyo` CLI — their own notes and documents, plus their saved ChatGPT /
+  Claude conversations. Reach for this whenever a request could be answered from
+  something the user wrote, saved, decided, or discussed before, even when they
+  don't mention "Miyo," "notes," or a filename: "what did I decide about X", "find
+  my doc on Y", "what did I ask ChatGPT about Z", "summarize what I have on …",
+  "did I already write something about …". Also for listing/inspecting their
+  indexed files and folders, or converting a PDF to text. Commands: `miyo search`,
+  `miyo files`, `miyo folders`, `miyo parse`.
 ---
 
 # Miyo CLI
@@ -17,20 +19,13 @@ saved AI chats into a local vector database and exposes **hybrid semantic search
 (dense + sparse, fused with RRF) over them. The `miyo` CLI is a thin client over a
 local HTTP service — everything stays on the user's machine.
 
-Reach for it when the answer likely lives in the user's *own* material rather than
-your training data or the open web.
-
-Miyo has **two** agent interfaces. This skill is about the first; use whichever fits
-where you run:
-
-- **The local CLI** (`miyo …`) — for an agent on the **same machine** as the Miyo
-  app. Read-only, no auth, lowest latency. *This is the one you almost always want.*
-- **The remote MCP** (via the hosted relay) — for **cloud** AI clients (ChatGPT,
-  claude.ai) that aren't on the user's machine; it also adds write tools. See
-  [references/remote-mcp.md](references/remote-mcp.md).
-
-> The old local stdio MCP server (`miyo mcp`) is **deprecated** — don't use or
-> recommend it. On-machine, call the CLI; off-machine, use the remote MCP.
+**Reach for it whenever the answer likely lives in the user's *own* material**
+rather than your training data or the open web. That includes questions that never
+say "Miyo" or "notes" but clearly point at something the user wrote, saved, decided,
+or discussed before — "what did we land on for the pricing model?", "pull up my
+onboarding doc", "have I written about this already?". When in doubt, search: a
+quick `miyo search` is cheap, and answering from your own guess when the user has a
+real note on it is the failure mode to avoid.
 
 ## Prerequisites (check once)
 
@@ -38,7 +33,7 @@ The CLI talks to a local service that the **Miyo desktop app** runs. Confirm bot
 the binary and the service before relying on results:
 
 ```bash
-command -v miyo                                   # binary on PATH?
+command -v miyo                                        # binary on PATH?
 curl -s --max-time 2 http://127.0.0.1:8742/v0/health   # service up? expect {"status":"ok",...}
 ```
 
@@ -50,6 +45,8 @@ curl -s --max-time 2 http://127.0.0.1:8742/v0/health   # service up? expect {"st
   treat an empty result as "the user has no notes about this." See
   [references/troubleshooting.md](references/troubleshooting.md).
 
+(`miyo parse` is the exception — it needs no service. See below.)
+
 ## Commands at a glance
 
 | Command | Purpose |
@@ -59,11 +56,31 @@ curl -s --max-time 2 http://127.0.0.1:8742/v0/health   # service up? expect {"st
 | `miyo folders` | List indexed folders + indexing status |
 | `miyo parse <file>` | Convert a document (PDF) to Markdown/text — no service needed |
 
-(`miyo mcp` also exists but is **deprecated** — see above.)
+Global behavior: every service-backed command takes `--json` (machine-readable
+output) and `--url` (override the service URL). Exit code `0` = success, `1` =
+error. Dates are `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`.
+(`miyo mcp` also exists but is **deprecated** — don't use or recommend it.)
 
-Global behavior: every command takes `--json` (machine-readable output) and `--url`
-(override the service URL). Exit code `0` = success, `1` = error. Dates are
-`YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`.
+## A worked example
+
+User: *"What did we decide about rate-limiting the ingest API?"* — a question about a
+past decision, so the answer is likely in the user's own notes, not yours.
+
+```bash
+# 1. Search the user's documents for the decision.
+miyo search --json -n 5 "rate limiting the ingest API decision"
+#    → results[0].path = "eng/ingest-api.md"
+#      results[0].content = "...settled on a token bucket, 100 req/s per key..."
+
+# 2. The snippet is often enough to answer. If you need fuller context, read the
+#    file from disk — resolve the folder's absolute path, then open the file.
+miyo folders --json        # → folders[].absolute_path, e.g. /Users/me/Notes
+#    read /Users/me/Notes/eng/ingest-api.md
+```
+
+Then answer **from what you found**, citing `eng/ingest-api.md`. The pattern —
+*search → trust the user's material over your own guess → cite the path → read the
+file when the snippet is thin* — is the core of using Miyo well.
 
 ## The main workflow: search
 
@@ -116,23 +133,19 @@ per failure kind** (unsupported type, not found, parse failed, …) so you can b
 without scraping stderr. Full flags, JSON shape, and exit-code table:
 [references/parse.md](references/parse.md).
 
-## The other interface: remote MCP
-
-For **cloud** AI clients (ChatGPT, claude.ai) that can't run the CLI, Miyo is
-reachable as a remote MCP server through the hosted relay — same search engine, plus
-write tools (`create_file`, `edit_file`). It's enabled by the user in
-the desktop app, not by an agent. What it offers and how it's set up:
-[references/remote-mcp.md](references/remote-mcp.md).
-
 ## Guidance for agents
 
-- **Don't fabricate.** Treat results as the user's ground truth. Cite the file path
-  you got a fact from. If search returns nothing, say so plainly rather than
-  filling the gap from general knowledge.
-- **Pick the right corpus.** A question about "what I discussed/asked" → `--source
-  chats`. A question about "my notes/docs" → `documents`.
+- **Search before you answer.** For anything that could live in the user's own
+  material, run `miyo search` first. The expensive mistake is answering from your
+  own knowledge when the user has a real note that says otherwise.
+- **Don't fabricate.** Treat results as the user's ground truth and cite the file
+  path a fact came from. If search returns nothing, say so plainly rather than
+  filling the gap from general knowledge — and consider whether the other `--source`
+  or looser filters would find it.
+- **Pick the right corpus.** "What I discussed/asked" (an AI chat) → `--source
+  chats`. "My notes/docs" → `documents` (the default).
 - **Use `--json` when you parse.** Human output is for display; `--json` is stable
   for scripting (`results[]`, each `{path, content}`).
 - **Keep queries conceptual.** This is semantic search — natural-language intent
   beats exact keywords. Narrow with `--path` / `--mtime-*` instead of stuffing the
-  query.
+  query string.
