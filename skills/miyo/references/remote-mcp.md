@@ -54,9 +54,8 @@ so you know what the remote surface can do (it's a superset of the CLI).
 | `read_file` | Full contents of a file by path (text, or base64 for images). Use after `search` to expand a hit. | no |
 | `create_file` | Create a new file in a folder where `allow_writes` is true. Won't create new subfolders. | **yes** |
 | `edit_file` | Targeted `old_text`→`new_text` replacement in an existing file (must match exactly once). | **yes** |
-| `sync_chats` | Save the user's ChatGPT/Claude conversations into the local index (optionally one `platform`). | **yes** |
 
-The CLI is read-only; `read_file` and the three write tools exist **only** on the
+The CLI is read-only; `read_file` and the two write tools exist **only** on the
 remote MCP. A local agent that needs full file contents should read the file from
 disk instead — resolve the folder's `absolute_path` from `miyo folders` and join it
 with the result path. A local agent that needs to write should write to disk

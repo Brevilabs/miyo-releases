@@ -6,8 +6,8 @@ description: >-
   conversations. Use whenever a request could be answered from something the user
   wrote, saved, or discussed before: "what did I note about X", "find my doc on
   Y", "what did I ask ChatGPT about Z", "summarize my notes on …", or when they
-  want to list or inspect their indexed files and folders. Commands: `miyo
-  search`, `miyo files`, `miyo folders`.
+  want to list or inspect their indexed files and folders, or convert a PDF to
+  text. Commands: `miyo search`, `miyo files`, `miyo folders`, `miyo parse`.
 ---
 
 # Miyo CLI
@@ -57,6 +57,7 @@ curl -s --max-time 2 http://127.0.0.1:8742/v0/health   # service up? expect {"st
 | `miyo search <query>` | Semantic search over documents or saved chats |
 | `miyo files` | List indexed files, with filters |
 | `miyo folders` | List indexed folders + indexing status |
+| `miyo parse <file>` | Convert a document (PDF) to Markdown/text — no service needed |
 
 (`miyo mcp` also exists but is **deprecated** — see above.)
 
@@ -98,11 +99,28 @@ miyo files --order-by mtime -n 10  # 10 most-recently-modified files
 
 Details and JSON shapes: [references/files-and-folders.md](references/files-and-folders.md).
 
+## Converting documents: parse
+
+`miyo parse <file>` turns a document (currently PDF) into Markdown/text. It's the
+**exception** to the prerequisites above — it runs in-process, so the Miyo app does
+**not** need to be running, and the file need not be in an indexed folder.
+
+```bash
+miyo parse report.pdf                 # Markdown to stdout
+miyo parse report.pdf -o report.md    # write to a file
+miyo parse report.pdf --json          # structured: text, title, page_count, …
+```
+
+Use it to read or quote a PDF the user points at. It returns a **distinct exit code
+per failure kind** (unsupported type, not found, parse failed, …) so you can branch
+without scraping stderr. Full flags, JSON shape, and exit-code table:
+[references/parse.md](references/parse.md).
+
 ## The other interface: remote MCP
 
 For **cloud** AI clients (ChatGPT, claude.ai) that can't run the CLI, Miyo is
 reachable as a remote MCP server through the hosted relay — same search engine, plus
-write tools (`create_file`, `edit_file`, `sync_chats`). It's enabled by the user in
+write tools (`create_file`, `edit_file`). It's enabled by the user in
 the desktop app, not by an agent. What it offers and how it's set up:
 [references/remote-mcp.md](references/remote-mcp.md).
 
