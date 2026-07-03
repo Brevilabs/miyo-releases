@@ -29,23 +29,42 @@ real note on it is the failure mode to avoid.
 
 ## Prerequisites (check once)
 
-The CLI talks to a local service that the **Miyo desktop app** runs. Confirm both
-the binary and the service before relying on results:
+The CLI ships *with* the **Miyo desktop app**, which also runs the local service the
+CLI queries. Confirm the binary is installed and the service is up before relying on
+results. The commands differ slightly by OS; the `miyo` subcommands below are
+identical everywhere.
+
+**1. Is `miyo` installed?**
 
 ```bash
-command -v miyo                                        # binary on PATH?
-curl -s --max-time 2 http://127.0.0.1:8742/v0/health   # service up? expect {"status":"ok",...}
+command -v miyo      # macOS / Linux
+```
+```powershell
+Get-Command miyo     # Windows (PowerShell)   —   or:  where miyo   (cmd)
 ```
 
-- The app installs `miyo` to `~/.miyo/bin/miyo` (macOS/Linux) or
-  `%LOCALAPPDATA%\Miyo\bin\miyo.exe` (Windows) on first launch and adds it to PATH;
-  a brand-new install needs one terminal restart.
-- If `curl` fails or `miyo` prints **"Cannot connect to Miyo service / Is the Miyo
-  app running?"**, the desktop app isn't running. Ask the user to open it — don't
-  treat an empty result as "the user has no notes about this." See
-  [references/troubleshooting.md](references/troubleshooting.md).
+If nothing is found, Miyo isn't installed (or isn't on PATH yet). **Tell the user to
+install Miyo from https://miyo.md/ and launch the app once** — first launch installs
+the `miyo` CLI and adds it to PATH — then **open a new terminal**. If the app is
+already installed, [references/troubleshooting.md](references/troubleshooting.md) has
+the per-OS binary path and PATH fixes.
 
-(`miyo parse` is the exception — it needs no service. See below.)
+**2. Is the service up?**
+
+```bash
+curl -s --max-time 2 http://127.0.0.1:8742/v0/health          # macOS / Linux — expect {"status":"ok",...}
+```
+```powershell
+curl.exe -s http://127.0.0.1:8742/v0/health                   # Windows: use curl.exe (bare `curl` is an alias)
+# or:  Invoke-RestMethod http://127.0.0.1:8742/v0/health
+```
+
+If this fails or `miyo` prints **"Cannot connect to Miyo service / Is the Miyo app
+running?"**, the desktop app isn't running — **ask the user to open the Miyo app (or
+download it from https://miyo.md/ if it isn't installed)**. Don't treat that as "the
+user has no notes about this."
+
+(`miyo parse` is the exception — it needs no running service. See below.)
 
 ## Commands at a glance
 
