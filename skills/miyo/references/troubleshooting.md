@@ -78,6 +78,36 @@ miyo search --url http://127.0.0.1:9999 "test"
 export MIYO_URL=http://127.0.0.1:9999
 ```
 
+## Miyo on another device (Tailscale / LAN)
+
+Some users keep their index on one machine (a desktop) and want to reach it from
+another (a laptop) — commonly over **Tailscale**. The CLI supports this: point it at
+the remote host.
+
+```bash
+export MIYO_URL=http://my-desktop.tailnet-name.ts.net:8742   # MagicDNS name
+# or a Tailscale IP:  export MIYO_URL=http://100.101.102.103:8742
+miyo search "the thing I wrote on my desktop"
+```
+
+Two things have to be true, and both are the **user's** setup, not something the CLI
+or an agent can do:
+
+- **The service must be listening on a reachable interface.** By default Miyo binds
+  to `127.0.0.1` (loopback only), so it is *not* reachable from other devices out of
+  the box. The user has to start it with `MIYO_HOST` set to an address the other
+  device can reach.
+- **Bind narrowly, because the local API has no authentication.** Prefer binding to
+  the device's **Tailscale IP** specifically — `MIYO_HOST=100.x.y.z` — so only the
+  tailnet can reach it. Binding to `0.0.0.0` exposes the unauthenticated API to every
+  network the host is on; only do that on a network you fully trust. The tailnet
+  (WireGuard-encrypted, ACL-gated) is the security boundary here — there is no
+  token or password on the service itself.
+
+If `MIYO_URL` points at a remote host that isn't reachable, `miyo` reports the same
+"Cannot connect" error as a stopped local service — check the tailnet connection and
+that the remote Miyo is running and bound as above.
+
 ## Exit codes
 
 - `0` — success (including a valid empty result).

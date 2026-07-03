@@ -51,18 +51,29 @@ the per-OS binary path and PATH fixes.
 
 **2. Is the service up?**
 
+Probe whatever URL the CLI will actually use — `MIYO_URL` overrides the localhost
+default (see the cross-device note below), so honor it rather than hardcoding
+`127.0.0.1`:
+
 ```bash
-curl -s --max-time 2 http://127.0.0.1:8742/v0/health          # macOS / Linux — expect {"status":"ok",...}
+curl -s --max-time 2 "${MIYO_URL:-http://127.0.0.1:8742}/v0/health"   # macOS / Linux — expect {"status":"ok",...}
 ```
 ```powershell
-curl.exe -s http://127.0.0.1:8742/v0/health                   # Windows: use curl.exe (bare `curl` is an alias)
-# or:  Invoke-RestMethod http://127.0.0.1:8742/v0/health
+curl.exe -s "$($env:MIYO_URL ?? 'http://127.0.0.1:8742')/v0/health"   # Windows: curl.exe (bare `curl` is an alias)
+# or:  Invoke-RestMethod "$($env:MIYO_URL ?? 'http://127.0.0.1:8742')/v0/health"
 ```
 
 If this fails or `miyo` prints **"Cannot connect to Miyo service / Is the Miyo app
 running?"**, the desktop app isn't running — **ask the user to open the Miyo app (or
 download it from https://miyo.md/ if it isn't installed)**. Don't treat that as "the
 user has no notes about this."
+
+**Miyo on another device (e.g. Tailscale):** if the user's index lives on a
+*different* machine — a desktop they reach over Tailscale/LAN — point the CLI at it
+with `MIYO_URL` / `--url http://<host>:8742` (a Tailscale MagicDNS name or `100.x`
+address). This works only if that Miyo was bound to a reachable interface; details
+and the security caveat are in
+[references/troubleshooting.md](references/troubleshooting.md).
 
 (`miyo parse` is the exception — it needs no running service. See below.)
 
