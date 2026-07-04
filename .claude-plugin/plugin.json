@@ -1,0 +1,10 @@
+{
+  "name": "miyo",
+  "description": "Search and read your own indexed notes, documents, and saved ChatGPT/Claude conversations, and convert PDFs to text, through the local miyo CLI. Use for questions about your own past writing, decisions, and drafts.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Brevilabs"
+  },
+  "homepage": "https://miyo.md",
+  "repository": "https://github.com/Brevilabs/miyo-releases"
+}
