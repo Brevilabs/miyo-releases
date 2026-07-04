@@ -1,0 +1,14 @@
+{
+  "name": "miyo-releases",
+  "description": "Official Brevilabs marketplace for the Miyo agent skill.",
+  "owner": {
+    "name": "Brevilabs"
+  },
+  "plugins": [
+    {
+      "name": "miyo",
+      "source": "./",
+      "description": "Search and read your own indexed notes, documents, and saved ChatGPT/Claude conversations, and convert PDFs to text, through the local miyo CLI."
+    }
+  ]
+}
