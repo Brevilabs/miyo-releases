@@ -8,8 +8,8 @@ description: >-
   don't mention "Miyo," "notes," or a filename: "what did I decide about X", "find
   my doc on Y", "what did I ask ChatGPT about Z", "summarize what I have on …",
   "did I already write something about …". Also for listing/inspecting their
-  indexed files and folders, or converting a PDF to text. Commands: `miyo search`,
-  `miyo files`, `miyo folders`, `miyo parse`.
+  indexed files and folders. Commands: `miyo search`, `miyo files`, `miyo folders`.
+  (To convert a PDF to text, use the separate `miyo-parse` skill.)
 ---
 
 # Miyo CLI
@@ -75,8 +75,6 @@ address). This works only if that Miyo was bound to a reachable interface; detai
 and the security caveat are in
 [references/troubleshooting.md](references/troubleshooting.md).
 
-(`miyo parse` is the exception — it needs no running service. See below.)
-
 ## Commands at a glance
 
 | Command | Purpose |
@@ -84,7 +82,8 @@ and the security caveat are in
 | `miyo search <query>` | Semantic search over documents or saved chats |
 | `miyo files` | List indexed files, with filters |
 | `miyo folders` | List indexed folders + indexing status |
-| `miyo parse <file>` | Convert a document (PDF) to Markdown/text — no service needed |
+
+(Converting a PDF to text is a separate skill — `miyo-parse`.)
 
 Global behavior: every service-backed command takes `--json` (machine-readable
 output) and `--url` (override the service URL). Exit code `0` = success, `1` =
@@ -145,23 +144,6 @@ miyo files --order-by mtime -n 10  # 10 most-recently-modified files
 ```
 
 Details and JSON shapes: [references/files-and-folders.md](references/files-and-folders.md).
-
-## Converting documents: parse
-
-`miyo parse <file>` turns a document (currently PDF) into Markdown/text. It's the
-**exception** to the prerequisites above — it runs in-process, so the Miyo app does
-**not** need to be running, and the file need not be in an indexed folder.
-
-```bash
-miyo parse report.pdf                 # Markdown to stdout
-miyo parse report.pdf -o report.md    # write to a file
-miyo parse report.pdf --json          # structured: text, title, page_count, …
-```
-
-Use it to read or quote a PDF the user points at. It returns a **distinct exit code
-per failure kind** (unsupported type, not found, parse failed, …) so you can branch
-without scraping stderr. Full flags, JSON shape, and exit-code table:
-[references/parse.md](references/parse.md).
 
 ## Guidance for agents
 
