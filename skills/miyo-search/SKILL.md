@@ -1,5 +1,5 @@
 ---
-name: miyo
+name: miyo-search
 description: >-
   Search and read the user's personal knowledge base from the command line with
   the local `miyo` CLI — their own notes and documents, plus their saved ChatGPT /

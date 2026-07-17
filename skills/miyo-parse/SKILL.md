@@ -8,7 +8,7 @@ description: >-
   PDF to Markdown", "summarize this PDF", "read this ebook/epub", "what's in
   book.epub". Works on any file path and needs **no** running Miyo app or service —
   it parses in-process. This is document *conversion*, distinct from searching the
-  user's indexed notes (that's the `miyo` skill). Command: `miyo parse`.
+  user's indexed notes (that's the `miyo-search` skill). Command: `miyo parse`.
 ---
 
 # `miyo parse` — document → Markdown/text
@@ -28,7 +28,7 @@ files`, `miyo folders`, which query the running app):
 
 So this is the tool for "turn this PDF into text I can read/quote/feed onward,"
 independent of the user's index. For searching the user's own notes and saved chats,
-use the separate **`miyo`** skill instead.
+use the separate **`miyo-search`** skill instead.
 
 ## Prerequisite: is `miyo` installed? (check once)
 
@@ -130,7 +130,7 @@ miyo parse ~/Downloads/book.epub -o ~/notes/book.md
 ## Guidance for agents
 
 - Use this when the user hands you a **specific PDF or EPUB** to read or convert. To
-  find something in the user's own notes or saved chats, use the `miyo` skill's
+  find something in the user's own notes or saved chats, use the `miyo-search` skill's
   `search` instead — that's a different job.
 - Prefer `--json` when you parse the output programmatically; the plain form is for
   display.
