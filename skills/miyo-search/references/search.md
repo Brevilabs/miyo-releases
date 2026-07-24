@@ -35,9 +35,8 @@ The two corpora live in separate collections and are **never** searched together
 - `chats` — conversations the user saved from ChatGPT (`chatgpt.com`) and Claude
   (`claude.ai`).
 
-Choose `chats` whenever the user points at a past AI conversation: "what did I ask
-ChatGPT about…", "find the Claude chat where we…", "in an earlier conversation the
-assistant suggested…". Otherwise use `documents`. When unsure, run both.
+Choose `chats` whenever the user points at a past AI conversation ("what did I ask
+ChatGPT about…", "find the Claude chat where we…"). When unsure, run both.
 
 ## Output
 

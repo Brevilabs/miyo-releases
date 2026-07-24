@@ -20,60 +20,56 @@ saved AI chats into a local vector database and exposes **hybrid semantic search
 local HTTP service — everything stays on the user's machine.
 
 **Reach for it whenever the answer likely lives in the user's *own* material**
-rather than your training data or the open web. That includes questions that never
-say "Miyo" or "notes" but clearly point at something the user wrote, saved, decided,
-or discussed before — "what did we land on for the pricing model?", "pull up my
-onboarding doc", "have I written about this already?". When in doubt, search: a
-quick `miyo search` is cheap, and answering from your own guess when the user has a
-real note on it is the failure mode to avoid.
+rather than your training data or the open web — including questions that never say
+"Miyo" or "notes" ("what did we land on for the pricing model?", "have I written
+about this already?"). When in doubt, search: it's cheap, and answering from your own
+guess when the user has a real note on it is the failure mode to avoid.
 
 ## Prerequisites (check once)
 
 The CLI ships *with* the **Miyo desktop app**, which also runs the local service the
-CLI queries. Confirm the binary is installed and the service is up before relying on
-results. The commands differ slightly by OS; the `miyo` subcommands below are
-identical everywhere.
+CLI queries. Invocation differs by OS below; the `miyo` subcommands are identical
+everywhere.
 
-**1. Is `miyo` installed?**
+**1. Invoke `miyo` by its full path**
 
-```bash
-command -v miyo      # macOS / Linux
-```
-```powershell
-Get-Command miyo     # Windows (PowerShell)   —   or:  where miyo   (cmd)
-```
+Don't rely on `miyo` being on PATH. An agent that wasn't started from a terminal (an
+editor running it over ACP, say) can inherit a bare environment that never sources the
+user's shell rc files, so a plain `miyo` fails on a perfectly good install. Invoke the
+CLI by its full install path instead — the form depends on the shell:
 
-If nothing is found, Miyo isn't installed (or isn't on PATH yet). **Tell the user to
-install Miyo from https://miyo.md/ and launch the app once** — first launch installs
-the `miyo` CLI and adds it to PATH — then **open a new terminal**. If the app is
-already installed, [references/troubleshooting.md](references/troubleshooting.md) has
-the per-OS binary path and PATH fixes.
+| Shell | Full invocation (replaces `miyo`) |
+|---|---|
+| macOS / Linux (bash, zsh) | `~/.miyo/bin/miyo` |
+| Windows PowerShell | `& "$env:LOCALAPPDATA\Miyo\bin\miyo\miyo.exe"` |
+| Windows cmd | `"%LOCALAPPDATA%\Miyo\bin\miyo\miyo.exe"` |
+
+The examples below write plain `miyo` for brevity; swap in the full form for your shell
+(`%LOCALAPPDATA%` only expands in cmd, so PowerShell must use `$env:LOCALAPPDATA`). Each
+command runs in a fresh shell, so don't stash it in a variable — write the path out.
+
+If that path doesn't exist, fall back to a bare `miyo` — a non-standard install may
+still be on PATH. Only when both fail is Miyo actually missing: **tell the user to
+install it from https://miyo.md/ and launch the app once** — first launch installs the
+`miyo` CLI.
+
+If the full path is present but still fails,
+[references/troubleshooting.md](references/troubleshooting.md) has the PATH fixes.
 
 **2. Is the service up?**
 
-Probe whatever URL the CLI will actually use — `MIYO_URL` overrides the localhost
-default (see the cross-device note below), so honor it rather than hardcoding
-`127.0.0.1`:
+Don't run a separate health probe — the first real command *is* the readiness check.
+Every service-backed `miyo` command opens the same local connection, so if the
+service is down it exits `1` with **"Cannot connect to Miyo service / Is the Miyo app
+running?"**. That means the app isn't running: **ask the user to open it** (or
+download it from https://miyo.md/). It never means "the user has no notes about this."
 
-```bash
-curl -s --max-time 2 "${MIYO_URL:-http://127.0.0.1:8742}/v0/health"   # macOS / Linux — expect {"status":"ok",...}
-```
-```powershell
-curl.exe -s "$($env:MIYO_URL ?? 'http://127.0.0.1:8742')/v0/health"   # Windows: curl.exe (bare `curl` is an alias)
-# or:  Invoke-RestMethod "$($env:MIYO_URL ?? 'http://127.0.0.1:8742')/v0/health"
-```
-
-If this fails or `miyo` prints **"Cannot connect to Miyo service / Is the Miyo app
-running?"**, the desktop app isn't running — **ask the user to open the Miyo app (or
-download it from https://miyo.md/ if it isn't installed)**. Don't treat that as "the
-user has no notes about this."
-
-**Miyo on another device (e.g. Tailscale):** if the user's index lives on a
-*different* machine — a desktop they reach over Tailscale/LAN — point the CLI at it
-with `MIYO_URL` / `--url http://<host>:8742` (a Tailscale MagicDNS name or `100.x`
-address). This works only if that Miyo was bound to a reachable interface; details
-and the security caveat are in
-[references/troubleshooting.md](references/troubleshooting.md).
+Inside a sandboxed coding agent (e.g. Codex), that local connection counts as network
+access and may prompt for approval the first time `miyo` runs — a separate `curl`
+would only add a second prompt.
+[references/troubleshooting.md](references/troubleshooting.md) covers allowing it
+once, and pointing the CLI at a non-default or remote service (`MIYO_URL`,
+Tailscale).
 
 ## Commands at a glance
 
@@ -127,10 +123,9 @@ Two **separate** corpora, chosen with `--source` (never combined):
 
 If you're unsure which corpus holds the answer, search `documents`, then `chats`.
 
-Results are grouped by file: each hit shows a path and a matching snippet. The
-snippet is an excerpt, not the whole file — to read full content, open the file on
-disk (resolve the folder's absolute path via `miyo folders`, then read the file).
-Full flag reference, filtering by path/date, and output shapes:
+Results are grouped by file: each hit shows a path and a matching snippet — an
+excerpt, not the whole file (the worked example above shows how to read the full
+file). Full flag reference, filtering by path/date, and output shapes:
 [references/search.md](references/search.md).
 
 ## Browsing what's indexed
@@ -147,17 +142,9 @@ Details and JSON shapes: [references/files-and-folders.md](references/files-and-
 
 ## Guidance for agents
 
-- **Search before you answer.** For anything that could live in the user's own
-  material, run `miyo search` first. The expensive mistake is answering from your
-  own knowledge when the user has a real note that says otherwise.
 - **Don't fabricate.** Treat results as the user's ground truth and cite the file
   path a fact came from. If search returns nothing, say so plainly rather than
   filling the gap from general knowledge — and consider whether the other `--source`
   or looser filters would find it.
-- **Pick the right corpus.** "What I discussed/asked" (an AI chat) → `--source
-  chats`. "My notes/docs" → `documents` (the default).
 - **Use `--json` when you parse.** Human output is for display; `--json` is stable
-  for scripting (`results[]`, each `{path, content}`).
-- **Keep queries conceptual.** This is semantic search — natural-language intent
-  beats exact keywords. Narrow with `--path` / `--mtime-*` instead of stuffing the
-  query string.
+  for scripting.

@@ -5,7 +5,10 @@
 The CLI is a client of a local HTTP service that the **Miyo desktop app** owns. This
 error means the service isn't reachable.
 
-1. Confirm the service:
+1. The `miyo` command you already ran is the check — a `1` exit with this message
+   means the service isn't reachable. If you want a manual probe (e.g. to confirm
+   the app is back up), `curl` the health endpoint directly, but you don't need to
+   before a normal search:
    ```bash
    curl -s --max-time 2 http://127.0.0.1:8742/v0/health          # macOS / Linux
    ```
@@ -25,27 +28,57 @@ It's an availability problem, not an empty result.
 > `curl.exe` (real curl ships with Windows 10+), or `Invoke-RestMethod <url>`. In
 > `cmd.exe`, plain `curl` is the real one.
 
+## Running Miyo inside a sandboxed agent (e.g. Codex)
+
+Some coding agents run commands in a sandbox that blocks network access by
+default, and a connection to `127.0.0.1:8742` counts as network. So the *first*
+`miyo` command that talks to the service may pause for an approval prompt — this is
+the sandbox, not a Miyo error. Once approved, the local service works normally;
+everything still stays on the user's machine.
+
+To avoid the prompt entirely, let the sandbox reach loopback. In Codex, either:
+
+- **Approve for the session** when first asked to run `miyo`, so later calls don't
+  re-prompt; or
+- **Allow network in the workspace sandbox** — in `~/.codex/config.toml`:
+  ```toml
+  [sandbox_workspace_write]
+  network_access = true
+  ```
+
+Other sandboxed agents have equivalent settings (allow the command, or permit
+loopback). None of this weakens Miyo's local-only model: the connection is still
+loopback to a service on the same machine.
+
 ## `miyo: command not found` (or `miyo` not recognized)
 
-The binary isn't installed, or isn't on `PATH` yet.
+**Try the full path before concluding anything** — it succeeds in the most common
+version of this failure:
 
-- **First, is Miyo installed?** The CLI ships with the desktop app. If the user has
-  never installed Miyo, point them to **https://miyo.md/**; installing and launching
-  the app once puts the CLI in place.
-- **Where the app installs it** (on first launch, and adds the dir to PATH):
+| OS | Binary path | PATH mechanism |
+|---|---|---|
+| macOS / Linux | `~/.miyo/bin/miyo` (symlink) | shell rc — `.zshenv`, or `.bashrc` + `.bash_profile` |
+| Windows | `%LOCALAPPDATA%\Miyo\bin\miyo\miyo.exe` (full copy) | User `Path` env var |
 
-  | OS | Binary path | PATH mechanism |
-  |---|---|---|
-  | macOS / Linux | `~/.miyo/bin/miyo` (symlink) | shell rc — `.zshenv`, or `.bashrc` + `.bash_profile` |
-  | Windows | `%LOCALAPPDATA%\Miyo\bin\miyo\miyo.exe` (full copy) | User `Path` env var |
+In PowerShell, run it with the call operator: `& "$env:LOCALAPPDATA\Miyo\bin\miyo\miyo.exe"
+search "…"` (`%LOCALAPPDATA%` only expands in `cmd`).
 
-- A fresh install needs **one new terminal** to pick up the updated PATH (Windows:
-  a newly opened terminal inherits the new User `Path`).
-- Workaround without waiting: call the binary by full path — e.g.
-  `~/.miyo/bin/miyo search "…"` (macOS/Linux) or
-  `& "$env:LOCALAPPDATA\Miyo\bin\miyo\miyo.exe" search "…"` (PowerShell).
-- If it's still missing after a relaunch, the app may never have finished first-run
-  setup. Have the user open Miyo once more.
+Causes, most likely first:
+
+- **PATH is bare in this session.** Either the agent wasn't started from a terminal
+  (an editor launching it over ACP, or any process started by launchd rather than a
+  shell, begins with just `/usr/bin:/bin:/usr/sbin:/sbin` on macOS), or the shell is
+  non-interactive (`bash -c` sources neither `.bashrc` nor `.bash_profile`). Neither
+  reads the user's shell rc files, so the install is fine and PATH is correct for
+  terminals; this session just can't see it. **Stop escalating** — the full path works,
+  and no reinstall or terminal restart will help. The CLI lives under the user's home
+  dir, which can never be on that bare PATH.
+- **Fresh install, old terminal.** A new install needs **one new terminal** to pick up
+  the updated PATH (Windows: a newly opened terminal inherits the new User `Path`).
+- **Miyo was never installed.** The CLI ships with the desktop app. If the full path
+  doesn't exist either, point the user to **https://miyo.md/**; installing and
+  launching the app once puts the CLI in place. If it's still missing after a relaunch,
+  the app may never have finished first-run setup. Have them open Miyo once more.
 
 ## Empty results
 

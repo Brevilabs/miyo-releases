@@ -26,25 +26,29 @@ files`, `miyo folders`, which query the running app):
 - **Any path.** `<file>` is any filesystem path; it does **not** need to live in an
   indexed Miyo folder.
 
-So this is the tool for "turn this PDF into text I can read/quote/feed onward,"
-independent of the user's index. For searching the user's own notes and saved chats,
-use the separate **`miyo-search`** skill instead.
+## Prerequisite: invoke `miyo` by its full path
 
-## Prerequisite: is `miyo` installed? (check once)
+`parse` needs no running service, but it does need the `miyo` **binary**.
 
-`parse` needs no running service, but it does need the `miyo` **binary** on PATH. The
-CLI ships with the Miyo desktop app.
+Don't rely on `miyo` being on PATH. An agent that wasn't started from a terminal (an
+editor running it over ACP, say) can inherit a bare environment that never sources the
+user's shell rc files, so a plain `miyo` fails on a perfectly good install. Invoke the
+CLI by its full install path instead — the form depends on the shell:
 
-```bash
-command -v miyo      # macOS / Linux
-```
-```powershell
-Get-Command miyo     # Windows (PowerShell)   —   or:  where miyo   (cmd)
-```
+| Shell | Full invocation (replaces `miyo`) |
+|---|---|
+| macOS / Linux (bash, zsh) | `~/.miyo/bin/miyo` |
+| Windows PowerShell | `& "$env:LOCALAPPDATA\Miyo\bin\miyo\miyo.exe"` |
+| Windows cmd | `"%LOCALAPPDATA%\Miyo\bin\miyo\miyo.exe"` |
 
-If nothing is found, Miyo isn't installed (or isn't on PATH yet). **Tell the user to
-install Miyo from https://miyo.md/ and launch the app once** — first launch installs the
-`miyo` CLI and adds it to PATH — then **open a new terminal**.
+The examples below write plain `miyo` for brevity; swap in the full form for your shell
+(`%LOCALAPPDATA%` only expands in cmd, so PowerShell must use `$env:LOCALAPPDATA`). Each
+command runs in a fresh shell, so don't stash it in a variable — write the path out.
+
+If that path doesn't exist, fall back to a bare `miyo` — a non-standard install may
+still be on PATH. Only when both fail is Miyo actually missing: **tell the user to
+install it from https://miyo.md/ and launch the app once** — first launch installs the
+`miyo` CLI.
 
 ## Usage
 
@@ -89,9 +93,8 @@ miyo parse report.pdf -o report.md     # writes report.md; prints "Wrote Markdow
 (spine) documents rather than pages.
 
 `failed_page_count` > 0 means some pages (PDF) or chapters (EPUB) couldn't be extracted
-— the `text` is partial. With `-o`, the file gets the same content that would have gone
-to stdout (Markdown, or the JSON object under `--json`); the "Wrote …" confirmation goes
-to stderr so stdout stays clean for piping.
+— the `text` is partial. The `-o` confirmation goes to **stderr**, so stdout stays clean
+for piping.
 
 ## Exit codes
 
@@ -129,9 +132,6 @@ miyo parse ~/Downloads/book.epub -o ~/notes/book.md
 
 ## Guidance for agents
 
-- Use this when the user hands you a **specific PDF or EPUB** to read or convert. To
-  find something in the user's own notes or saved chats, use the `miyo-search` skill's
-  `search` instead — that's a different job.
 - Prefer `--json` when you parse the output programmatically; the plain form is for
   display.
 - Branch on the **exit code**, not stderr text. A non-zero `failed_page_count` with exit
