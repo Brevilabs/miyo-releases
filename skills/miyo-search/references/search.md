@@ -18,6 +18,7 @@ optional but recommended. A query is required.
 | `-n, --limit <n>` | `20` | Max file results. Clamped to `1`–`1000`. |
 | `--source <documents\|chats>` | `documents` | Which corpus to search (see below). |
 | `--path <text>` | — | Keep only results whose path contains `<text>` (partial, case-insensitive). **Repeatable** — multiple `--path` flags OR together. |
+| `--variant <query>` | — | Another phrasing of the same question, searched alongside `<query>` and fused into one ranking. **Repeatable**; the service uses the first 2 and ignores the rest. A value cannot start with `-`. |
 | `--mtime-after <date>` | — | Only files modified on/after the date. |
 | `--mtime-before <date>` | — | Only files modified on/before the date. |
 | `--json` | off | Emit JSON instead of formatted text. |
@@ -79,6 +80,81 @@ has no read command — to get full text, **read the file off disk**: results ar
 user's real files, so resolve the folder's `absolute_path` from `miyo folders`, join
 it with the result `path`, and open the file directly.
 
+## Query expansion: search more than one phrasing
+
+A phrasing is embedded as a single vector and gets one keyword pass over the same
+string, so it only reaches notes written in that vocabulary. Two things follow:
+
+- **Don't concatenate synonyms into one query.** The extra terms drag the vector
+  toward an average of several meanings, and a padded string no longer matches any
+  title literally, so a file named after exactly what was asked loses the ranking
+  edge it would otherwise get.
+- **Do pass the alternatives as `--variant`.** Each becomes its own pair of
+  retrieval arms, landing in a different part of the index and getting its own
+  clean keyword pass. The service fuses every arm into one ranking with the same
+  Reciprocal Rank Fusion it already uses, in the same request, so a file that
+  several phrasings agree on rises without you doing anything.
+
+### Writing the variants
+
+Start from the user's question and produce two or three *complete* phrasings.
+Taking *"what did we decide about rate limiting the ingest API?"*:
+
+| Goes in | What changes | Text |
+|---|---|---|
+| the query | Verbatim. The user's own words, minus the filler. | `rate limiting the ingest API decision` |
+| `--variant` | Domain synonyms: what their notes probably say instead. | `ingest API throttling policy` |
+| `--variant` | The mechanism an answer would have to name. | `token bucket quota per API key` |
+
+What matters for recall:
+
+- **The query itself stays in the user's own terms.** Their nouns, proper nouns,
+  project names, and jargon are what their notes actually contain. Invention
+  belongs in the variants, never in the query.
+- **Stay in the language the user asked in.** Translating their terms searches a
+  vocabulary their notes may not use. If you know they keep notes in another
+  language, spend one variant there rather than translating the whole set.
+- **Resolve time expressions to dates.** "last month", "yesterday" and the like
+  compete for semantic weight in a query and are rejected as flag values: the CLI
+  accepts only `YYYY-MM-DD` (or with a time). Work out the absolute date yourself,
+  then pass `--mtime-after` / `--mtime-before`.
+- **Two variants is the budget, and it is a hard one.** The service uses the
+  first two it is given and ignores the rest. The reason is not cost: the fusion
+  weights every arm equally, so each phrasing dilutes the share the user's own
+  wording holds. Since rewrites of one question tend to resemble each other,
+  piling them on lets broad agreement among your inventions outrank the best
+  match for what was actually asked.
+- **Raise `-n` when you expand.** Variants widen what is *searched*, not how much
+  comes back: the fused ranking still returns the number you asked for, drawn from
+  a wider pool. At `-n 5` a file only one variant found has to beat four others to
+  appear at all.
+
+Which makes the whole thing one command. Keep it on one line: a trailing `\`
+continues a command in bash and zsh only, and this skill supports PowerShell and
+cmd as well.
+
+```bash
+miyo search --json -n 30 "rate limiting the ingest API decision" --variant "ingest API throttling policy" --variant "token bucket quota per API key"
+```
+
+The user's own wording belongs in the query, not in a `--variant`, because the
+ranking still keys off it: a file whose title literally matches those words is
+floated to the top, and the excerpt is centred on that phrasing. A `--variant`
+that merely repeats the query is dropped rather than counted twice.
+
+### When to expand
+
+- **Up front**, when the ask is broad or recall-shaped: "everything I have on X",
+  "did I ever write about Y", "summarize what I know about Z".
+- **As a second pass**, whenever the first search returns few results or hits that
+  miss the point. Retry with different words before telling the user they have
+  nothing. If every variant comes back empty, stop assuming it is the wording: a
+  stopped Qdrant or a folder still indexing also returns `No results found.` with
+  exit `0`. Work through
+  [troubleshooting.md](troubleshooting.md#empty-results) before answering.
+- **Skip it** when the user named a file or an exact title. That's a `miyo files`
+  lookup, not a semantic sweep.
+
 ## Recipes
 
 ```bash
@@ -100,5 +176,7 @@ miyo search --url http://127.0.0.1:9999 "test query"
 - Phrase queries by **intent**, not keywords — semantic search rewards
   natural-language descriptions of what you're looking for.
 - Narrow with `--path` / `--mtime-*` rather than overloading the query string.
+- Widen with `--variant` rather than a longer query; see
+  [Query expansion](#query-expansion-search-more-than-one-phrasing).
 - Raise `-n` when you need recall (feeding many candidates to a summarizer); keep
   it low when you want the single best hit.

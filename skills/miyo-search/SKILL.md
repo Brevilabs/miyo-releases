@@ -123,6 +123,30 @@ Two **separate** corpora, chosen with `--source` (never combined):
 
 If you're unsure which corpus holds the answer, search `documents`, then `chats`.
 
+### Widen recall with query variants
+
+Miyo embeds each query as a single vector and runs one keyword pass over the same
+string, so one phrasing only reaches the notes written in that vocabulary. Widen
+recall with **more queries, not a longer one**: padding a query with synonyms
+blurs the semantic match and costs an exactly-titled file the ranking edge it
+would otherwise get.
+
+Keep the user's own wording as the query and pass one or two rewrites as
+`--variant`. They are searched alongside it and fused into a single ranking by
+the service, so this stays one call with nothing for you to merge. Raise `-n`,
+since variants widen what is searched, not how much comes back:
+
+```bash
+miyo search --json -n 30 "rate limiting the ingest API decision" --variant "ingest API throttling policy" --variant "token bucket quota per API key"
+```
+
+Expand up front when the ask is broad ("everything I have on…", "did I ever write
+about…") or when the query is short or jargon-heavy. Otherwise expand as a second
+pass, once a first search has come back thin or off-topic.
+
+How to write the variants, why the budget is two, and what an empty result
+actually means: [references/search.md](references/search.md).
+
 Results are grouped by file: each hit shows a path and a matching snippet — an
 excerpt, not the whole file (the worked example above shows how to read the full
 file). Full flag reference, filtering by path/date, and output shapes:
@@ -143,8 +167,9 @@ Details and JSON shapes: [references/files-and-folders.md](references/files-and-
 ## Guidance for agents
 
 - **Don't fabricate.** Treat results as the user's ground truth and cite the file
-  path a fact came from. If search returns nothing, say so plainly rather than
-  filling the gap from general knowledge — and consider whether the other `--source`
-  or looser filters would find it.
+  path a fact came from. If search returns nothing, first retry with a different
+  phrasing, and consider whether the other `--source` or looser filters would find
+  it. Only once that comes back empty too, say so plainly rather than filling the
+  gap from general knowledge.
 - **Use `--json` when you parse.** Human output is for display; `--json` is stable
   for scripting.
