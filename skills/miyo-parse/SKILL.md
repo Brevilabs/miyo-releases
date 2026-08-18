@@ -84,7 +84,9 @@ miyo parse report.pdf -o report.md     # writes report.md; prints "Wrote Markdow
   "source_path": "/abs/path/report.pdf",
   "title": "Report",
   "page_count": 12,
-  "failed_page_count": 0
+  "failed_page_count": 0,
+  "pdf_type": "text_based",
+  "pages_needing_ocr": []
 }
 ```
 
@@ -95,6 +97,12 @@ miyo parse report.pdf -o report.md     # writes report.md; prints "Wrote Markdow
 `failed_page_count` > 0 means some pages (PDF) or chapters (EPUB) couldn't be extracted
 — the `text` is partial. The `-o` confirmation goes to **stderr**, so stdout stays clean
 for piping.
+
+For PDFs, `pdf_type` is `"text_based"`, `"scanned"`, `"image_based"`, or `"mixed"`,
+and `pages_needing_ocr` contains 1-indexed pages whose text layer PDF Inspector
+considers absent, sparse, or otherwise unreliable. A flagged page can still contribute
+partial Markdown; the flag means OCR may improve it, not that extraction returned no
+text. For EPUBs these fields are `null` and `[]`.
 
 ## Exit codes
 
