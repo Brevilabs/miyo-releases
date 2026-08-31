@@ -1,12 +1,13 @@
 ---
 name: miyo-parse
 description: >-
-  Convert a document (PDF or EPUB) into Markdown/plain text with the local `miyo
-  parse` CLI, so you can read, quote, or feed its contents onward. Reach for this
-  whenever the user points at a PDF or EPUB and wants its text — "read this PDF",
-  "what does this contract say", "pull the text out of report.pdf", "convert this
-  PDF to Markdown", "summarize this PDF", "read this ebook/epub", "what's in
-  book.epub". Works on any file path and needs **no** running Miyo app or service —
+  Convert a document (PDF, EPUB, or Word .docx) into Markdown/plain text with the
+  local `miyo parse` CLI, so you can read, quote, or feed its contents onward. Reach
+  for this whenever the user points at one of those and wants its text — "read this
+  PDF", "what does this contract say", "pull the text out of report.pdf", "convert
+  this PDF to Markdown", "summarize this PDF", "read this ebook/epub", "what's in
+  book.epub", "read this Word doc", "what's in proposal.docx". Works on any file path
+  and needs **no** running Miyo app or service —
   it parses in-process. This is document *conversion*, distinct from searching the
   user's indexed notes (that's the `miyo-search` skill). Command: `miyo parse`.
 ---
@@ -14,9 +15,11 @@ description: >-
 # `miyo parse` — document → Markdown/text
 
 `miyo parse <file>` turns a document into Markdown/plain text and prints it. Supports
-**PDF** and **EPUB**. Use it to read or quote a book or PDF the user points you at, or
-to convert one to a Markdown file on disk. For an EPUB, chapters come out in reading
-(spine) order.
+**PDF**, **EPUB**, and **Word `.docx`**. Use it to read or quote a document the user
+points you at, or to convert one to a Markdown file on disk. For an EPUB, chapters come
+out in reading (spine) order. For a `.docx`, headings, lists, and tables survive as
+Markdown, and a document with tracked changes reads as it would with changes accepted.
+Legacy `.doc` (Word 97-2003) is **not** supported.
 
 Two properties make this different from the rest of the Miyo CLI (`miyo search`, `miyo
 files`, `miyo folders`, which query the running app):
@@ -90,9 +93,10 @@ miyo parse report.pdf -o report.md     # writes report.md; prints "Wrote Markdow
 }
 ```
 
-`text` is the extracted Markdown/text; `format` is the **source** format (`"pdf"` or
-`"epub"`); `title` may be `null`. For an EPUB, `page_count` is the number of chapter
-(spine) documents rather than pages.
+`text` is the extracted Markdown/text; `format` is the **source** format (`"pdf"`,
+`"epub"`, or `"docx"`); `title` may be `null`. `page_count` counts pages for a PDF,
+chapter (spine) documents for an EPUB, and blocks (paragraphs, headings, list items,
+tables) for a `.docx`, which has no fixed pagination.
 
 `failed_page_count` > 0 means some pages (PDF) or chapters (EPUB) couldn't be extracted
 — the `text` is partial. The `-o` confirmation goes to **stderr**, so stdout stays clean
@@ -102,7 +106,9 @@ For PDFs, `pdf_type` is `"text_based"`, `"scanned"`, `"image_based"`, or `"mixed
 and `pages_needing_ocr` contains 1-indexed pages whose text layer PDF Inspector
 considers absent, sparse, or otherwise unreliable. A flagged page can still contribute
 partial Markdown; the flag means OCR may improve it, not that extraction returned no
-text. For EPUBs these fields are `null` and `[]`.
+text. For EPUBs and `.docx` files these fields are `null` and `[]`, and a `.docx`
+always reports `failed_page_count: 0` — its text either parses whole or the command
+fails.
 
 ## Exit codes
 
@@ -114,13 +120,13 @@ code per failure kind** so you can branch without scraping stderr:
 | `0` | Success |
 | `1` | Usage error (bad/missing/extra args) or failed to write `--output` |
 | `2` | Invalid input |
-| `3` | Unsupported media type (not a PDF or EPUB) |
+| `3` | Unsupported media type (not a PDF, EPUB, or `.docx`) |
 | `4` | File not found |
 | `5` | File not readable |
 | `6` | Parse failed |
 | `7` | Internal error |
 | `8` | Encrypted / password-protected |
-| `9` | No extractable text (scanned/image-only PDF, or an empty/image-only EPUB) |
+| `9` | No extractable text (scanned/image-only PDF, or an empty EPUB or `.docx`) |
 
 ## Recipes
 
@@ -130,6 +136,9 @@ miyo parse ~/Downloads/contract.pdf
 
 # Read an EPUB (chapters come out in reading order)
 miyo parse ~/Downloads/book.epub
+
+# Read a Word document (headings, lists, and tables become Markdown)
+miyo parse ~/Downloads/proposal.docx
 
 # Capture structured metadata (page/chapter counts, title) for a pipeline
 miyo parse ~/Downloads/contract.pdf --json > contract.json

@@ -18,7 +18,7 @@ optional but recommended. A query is required.
 | `-n, --limit <n>` | `20` | Max file results. Clamped to `1`–`1000`. |
 | `--source <documents\|chats>` | `documents` | Which corpus to search (see below). |
 | `--path <text>` | — | Keep only results whose path contains `<text>` (partial, case-insensitive). **Repeatable** — multiple `--path` flags OR together. |
-| `--variant <query>` | — | Another phrasing of the same question, searched alongside `<query>` and fused into one ranking. **Repeatable**; the service uses the first 2 and ignores the rest. A value cannot start with `-`. |
+| `--variant <query>` | — | Another phrasing of the same question, searched alongside `<query>` and fused into one ranking. **Repeatable**; the service searches at most 2. A value cannot start with `-`. |
 | `--mtime-after <date>` | — | Only files modified on/after the date. |
 | `--mtime-before <date>` | — | Only files modified on/before the date. |
 | `--json` | off | Emit JSON instead of formatted text. |
@@ -91,9 +91,9 @@ string, so it only reaches notes written in that vocabulary. Two things follow:
   edge it would otherwise get.
 - **Do pass the alternatives as `--variant`.** Each becomes its own pair of
   retrieval arms, landing in a different part of the index and getting its own
-  clean keyword pass. The service fuses every arm into one ranking with the same
-  Reciprocal Rank Fusion it already uses, in the same request, so a file that
-  several phrasings agree on rises without you doing anything.
+  clean keyword pass. The service fuses the variant arms among themselves first,
+  then with the query's own two, all in one request: a file several phrasings
+  agree on rises, but never above what the user's own words matched best.
 
 ### Writing the variants
 
@@ -118,12 +118,11 @@ What matters for recall:
   compete for semantic weight in a query and are rejected as flag values: the CLI
   accepts only `YYYY-MM-DD` (or with a time). Work out the absolute date yourself,
   then pass `--mtime-after` / `--mtime-before`.
-- **Two variants is the budget, and it is a hard one.** The service uses the
-  first two it is given and ignores the rest. The reason is not cost: the fusion
-  weights every arm equally, so each phrasing dilutes the share the user's own
-  wording holds. Since rewrites of one question tend to resemble each other,
-  piling them on lets broad agreement among your inventions outrank the best
-  match for what was actually asked.
+- **Two variants is the budget.** The service searches at most two and drops
+  the rest. The fusion keeps your rewrites from outvoting the user's own wording,
+  so the budget is about cost: each variant is another embedding and two more
+  retrieval arms, and rewrites of one question resemble each other enough that a
+  third rarely finds what the first two missed.
 - **Raise `-n` when you expand.** Variants widen what is *searched*, not how much
   comes back: the fused ranking still returns the number you asked for, drawn from
   a wider pool. At `-n 5` a file only one variant found has to beat four others to
