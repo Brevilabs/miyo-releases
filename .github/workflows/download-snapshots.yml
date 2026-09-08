@@ -1,0 +1,40 @@
+name: Miyo download snapshots
+on:
+  schedule:
+    - cron: '17 16 * * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/download_snapshots.py'
+      - 'tests/test_download_snapshots.py'
+      - '.github/workflows/download-snapshots.yml'
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests -v
+      - name: Collect counters
+        if: github.event_name != 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python scripts/download_snapshots.py --dry-run
+      - name: Preserve snapshot before ingestion
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: download-snapshot-${{ github.run_id }}-${{ github.run_attempt }}
+          path: download-snapshot.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Ingest saved observations
+        if: github.event_name != 'pull_request'
+        env:
+          POSTHOG_PROJECT_TOKEN: ${{ secrets.POSTHOG_PROJECT_TOKEN }}
+        run: python scripts/download_snapshots.py --input download-snapshot.json
