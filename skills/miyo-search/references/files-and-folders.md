@@ -77,7 +77,7 @@ sanity-check that the user's material is actually indexed before concluding a se
 ```
 Showing 1 folder(s):
 
-1. Notes [writable]
+1. Notes
    /Users/alex/Documents/Notes
    158/160 indexed, 2 errors  Status: indexing  Last scan: 2026-06-21 14:30
 ```
@@ -109,6 +109,8 @@ Field notes:
   scan is still in flight, so a search may be incomplete.
 - `error_files` — files that failed to index (unsupported/corrupt); they won't
   appear in search.
-- `allow_writes` — whether tools are permitted to create/edit files in this folder.
+- `allow_writes` — left over from the folder's old write switch; it no longer
+  decides anything. Which AI apps may read or write a folder is set per app in
+  Miyo under Connections.
 - No folders prints: `No folders registered. Add a folder in the Miyo app to get
   started.`
