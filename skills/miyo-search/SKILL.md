@@ -115,13 +115,17 @@ miyo search --source chats "tax question I asked ChatGPT"
 miyo search -n 5 --json "quarterly planning"    # top 5, parsed programmatically
 ```
 
-Two **separate** corpora, chosen with `--source` (never combined):
+Two **separate** corpora. Without `--folder`, `--source` picks one:
 
 - `documents` (default) — the user's own notes and files.
 - `chats` — saved ChatGPT and Claude conversations. Use this whenever the user
   refers to a past AI conversation ("the chat where we designed the schema").
 
 If you're unsure which corpus holds the answer, search `documents`, then `chats`.
+
+`--folder <name>` (repeatable) searches each named folder in its own corpus and
+ignores `--source`. Name a note folder and a chat folder to get both in one list,
+ordered by meaning; each `--json` result carries its `source`.
 
 ### Widen recall with query variants
 

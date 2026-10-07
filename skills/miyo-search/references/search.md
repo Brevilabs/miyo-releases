@@ -16,7 +16,8 @@ optional but recommended. A query is required.
 | Flag | Default | Meaning |
 |---|---|---|
 | `-n, --limit <n>` | `20` | Max file results. Clamped to `1`–`1000`. |
-| `--source <documents\|chats>` | `documents` | Which corpus to search (see below). |
+| `--source <documents\|chats>` | `documents` | Which corpus to search (see below). Ignored with `--folder`. |
+| `--folder <name>` | — | Search only this registered folder, in its own corpus. **Repeatable**; searches every folder given. |
 | `--path <text>` | — | Keep only results whose path contains `<text>` (partial, case-insensitive). **Repeatable** — multiple `--path` flags OR together. |
 | `--variant <query>` | — | Another phrasing of the same question, searched alongside `<query>` and fused into one ranking. **Repeatable**; the service searches at most 2. A value cannot start with `-`. |
 | `--mtime-after <date>` | — | Only files modified on/after the date. |
@@ -30,7 +31,9 @@ Invalid dates error out with exit code `1`.
 
 ## Sources: documents vs chats
 
-The two corpora live in separate collections and are **never** searched together.
+The two corpora live in separate collections. Without `--folder`, `--source` picks
+one. `--folder` searches each named folder in its own corpus and ignores `--source`,
+so naming a note folder and a chat folder returns one list, ordered by meaning.
 
 - `documents` — the user's own notes and files (the default, the primary corpus).
 - `chats` — conversations the user saved from ChatGPT (`chatgpt.com`) and Claude
@@ -61,8 +64,8 @@ valid answer, not an error).
 ```json
 {
   "results": [
-    { "path": "notes/infra/kubernetes.md", "content": "...excerpt..." },
-    { "path": "archive/2025/ops-runbook.md", "content": "...excerpt..." }
+    { "path": "notes/infra/kubernetes.md", "source": "documents", "content": "...excerpt..." },
+    { "path": "archive/2025/ops-runbook.md", "source": "documents", "content": "...excerpt..." }
   ],
   "count": 2,
   "chunk_count": 5,
@@ -70,7 +73,8 @@ valid answer, not an error).
 }
 ```
 
-Parse `results[]`; each entry is `{ path, content }`. `count` is files returned,
+Parse `results[]`; each entry is `{ path, source, content }`, where `source` is
+`documents` or `chats`. `count` is files returned,
 `chunk_count` is the number of underlying chunk hits before grouping.
 
 ## The `content` field is a snippet, not the file

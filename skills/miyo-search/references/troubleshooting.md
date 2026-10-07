@@ -86,7 +86,7 @@ A `0`-exit `No results found.` is a legitimate answer. Before concluding the use
 has nothing relevant:
 
 - Check the corpus — was the question about a past AI chat? Retry with
-  `--source chats`.
+  `--source chats` (a `--folder` search ignores it; name the chat folder instead).
 - Check coverage — `miyo folders`. If `indexed_files` < `total_files` or
   `status` is still `indexing`, the index is incomplete; wait and retry.
 - Loosen the query — semantic search rewards conceptual phrasing; drop
