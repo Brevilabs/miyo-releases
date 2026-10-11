@@ -112,5 +112,5 @@ Field notes:
 - `allow_writes` — left over from the folder's old write switch; it no longer
   decides anything. Which AI apps may read or write a folder is set per app in
   Miyo under Connections.
-- No folders prints: `No folders registered. Add a folder in the Miyo app to get
-  started.`
+- No folders prints: `No folders registered. Add one with miyo folders add <path>,
+  or in the Miyo app.`
