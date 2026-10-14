@@ -81,8 +81,10 @@ Parse `results[]`; each entry is `{ path, source, content }`, where `source` is
 
 Each result's `content` is the matching excerpt(s), not the whole document. The CLI
 has no read command — to get full text, **read the file off disk**: results are the
-user's real files, so resolve the folder's `absolute_path` from `miyo folders`, join
-it with the result `path`, and open the file directly.
+user's real files. A result `path` starts with its folder's name, which can differ
+from the directory's own name. Find the folder in `miyo folders --json` whose `path`
+is that first segment, replace the segment with the folder's `absolute_path`, and
+open the file directly.
 
 ## Query expansion: search more than one phrasing
 

@@ -103,8 +103,10 @@ Showing 1 folder(s):
 
 Field notes:
 
-- `absolute_path` — the folder's real location. **Join it with a search result's
-  `path` to read the actual file** off disk.
+- `path` — the folder's name. It is the directory's own name unless the user
+  chose another, and it is the first segment of every search result `path`.
+- `absolute_path` — the folder's real location. **To read a search result off
+  disk, replace the result `path`'s first segment with this.**
 - `status` — e.g. `indexing` vs settled; `indexed_files` < `total_files` means a
   scan is still in flight, so a search may be incomplete.
 - `error_files` — files that failed to index (unsupported/corrupt); they won't

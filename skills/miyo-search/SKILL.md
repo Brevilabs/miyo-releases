@@ -94,16 +94,18 @@ past decision, so the answer is likely in the user's own notes, not yours.
 ```bash
 # 1. Search the user's documents for the decision.
 miyo search --json -n 5 "rate limiting the ingest API decision"
-#    → results[0].path = "eng/ingest-api.md"
+#    → results[0].path = "Notes/eng/ingest-api.md"
 #      results[0].content = "...settled on a token bucket, 100 req/s per key..."
 
 # 2. The snippet is often enough to answer. If you need fuller context, read the
-#    file from disk — resolve the folder's absolute path, then open the file.
-miyo folders --json        # → folders[].absolute_path, e.g. /Users/me/Notes
+#    file from disk. A result path starts with its folder's name, which need not
+#    match the directory's name: find the folder whose path is that name, and
+#    swap the name for its absolute_path.
+miyo folders --json        # → { "path": "Notes", "absolute_path": "/Users/me/Notes" }
 #    read /Users/me/Notes/eng/ingest-api.md
 ```
 
-Then answer **from what you found**, citing `eng/ingest-api.md`. The pattern —
+Then answer **from what you found**, citing `Notes/eng/ingest-api.md`. The pattern —
 *search → trust the user's material over your own guess → cite the path → read the
 file when the snippet is thin* — is the core of using Miyo well.
 
