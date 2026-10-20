@@ -62,20 +62,10 @@ Miyo service / Is the Miyo app running?"**. That means the app isn't running: **
 user to open it**. Inside a sandboxed agent such as Codex, that local connection counts
 as network access and may need the user's approval the first time.
 
-## Commands at a glance
+## Commands
 
-| Command | Purpose |
-|---|---|
-| `miyo task list` | Every task, whether it is on, and its next run |
-| `miyo task create --name --agent --agent-path --folder --output --prompt --rule` | Save a new task, switched off |
-| `miyo task update <task> [fields]` | Change only the fields given |
-| `miyo task enable <task>` / `disable <task>` | Switch it on or off |
-| `miyo task run <task>` | Run it now and wait for the outcome |
-| `miyo task delete <task>` | Delete it; its past runs stay in Activity |
-
-`<task>` is the task's id or its exact name. Create and update also take
-`--timezone`. Every command takes `--json`.
-`miyo task --help` prints the full list.
+`miyo task list|create|update|enable|disable|run|delete`. `miyo task --help` gives
+the flags, and `<task>` is a task's id or its exact name.
 
 ## A worked example
 
@@ -148,51 +138,30 @@ miyo task enable "Loose ends"
 
 ## Choosing the agent
 
-Name yourself: `--agent claude-code` if you are Claude Code, `--agent codex` if you
-are Codex, `--agent opencode` if you are OpenCode. These are the only three agents a
-task can run. If you are none of them, ask the user which one to use, and check it is
-installed. OpenCode has to be 2.x: Miyo refuses an OpenCode 1.x executable and says to
-update it.
+Name yourself: `--agent claude-code`, `codex`, or `opencode`. If you are none of
+them, ask the user which one to use, and check it is installed. OpenCode has to be
+2.x: Miyo refuses an OpenCode 1.x executable and says to update it.
 
-`--agent-path` is the absolute path of that agent's executable, taken from your own
-shell with `"$(command -v claude)"`, `"$(command -v codex)"` or
-`"$(command -v opencode)"` (PowerShell: `(Get-Command claude).Source` or
-`(Get-Command opencode).Source`). If that prints an alias or nothing, find the real file
-or ask the user for it. The CLI saves your shell's PATH with the task, and every run
-uses that PATH, so create the task from a shell where the agent starts. The `PATH:`
-line in the output shows what the task got. `--agent` always needs `--agent-path` in
-the same command.
+Take `--agent-path` from your own shell (`"$(command -v claude)"`; PowerShell:
+`(Get-Command claude).Source`). If that prints an alias or nothing, find the real file
+or ask the user for it. The task runs with your shell's PATH, so create it from a shell
+where the agent starts; the `PATH:` line in the output shows what it got.
 
 ## Writing the schedule
 
 `--rule` is an RRULE with a `DTSTART` line, written as one string with a literal `\n`
-between the two lines:
+between the two lines. What Miyo adds to standard RRULE:
 
 - `DTSTART:YYYYMMDDTHHMMSS` is local wall-clock time in the task's time zone. Never add
   `Z` or `TZID`; the service refuses both.
 - Its time is the time of day the task runs. Its date is the first day it may run: use
   today's date (`date +%Y%m%d`) for a repeating task, and the day itself for a one-time
-  task.
-- Leave out `--timezone` to use this machine's zone. Pass an IANA name such as
-  `Europe/Berlin` only when the user asks for another zone.
+  task (`RRULE:FREQ=DAILY;COUNT=1`).
+- Leave out `--timezone` unless the user asks for another zone.
 - For several times a day, use `FREQ=DAILY` with `BYHOUR` and `BYMINUTE`. The service
   refuses `FREQ=HOURLY` or `FREQ=MINUTELY` combined with `BYHOUR` or `BYMINUTE`.
 - The service refuses a rule with no future occurrence, so a one-time task has to be in
   the future.
-
-| Request | `--rule` |
-|---|---|
-| Every weekday at 9:00 | `"DTSTART:20261001T090000\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"` |
-| Every day at 7:30 | `"DTSTART:20261001T073000\nRRULE:FREQ=DAILY"` |
-| Every Friday at 17:00 | `"DTSTART:20261001T170000\nRRULE:FREQ=WEEKLY;BYDAY=FR"` |
-| Every other Monday at 10:00 | `"DTSTART:20261005T100000\nRRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=MO"` |
-| At 9:00 and 17:00 every day | `"DTSTART:20261001T090000\nRRULE:FREQ=DAILY;BYHOUR=9,17;BYMINUTE=0"` |
-| Every 2 hours, from 8:00 | `"DTSTART:20261001T080000\nRRULE:FREQ=HOURLY;INTERVAL=2"` |
-| The 1st of every month at 9:00 | `"DTSTART:20261001T090000\nRRULE:FREQ=MONTHLY;BYMONTHDAY=1"` |
-| The last day of every month at 18:00 | `"DTSTART:20261001T180000\nRRULE:FREQ=MONTHLY;BYMONTHDAY=-1"` |
-| The first Monday of every month at 9:00 | `"DTSTART:20261001T090000\nRRULE:FREQ=MONTHLY;BYDAY=1MO"` |
-| Weekdays at 9:00 until the end of the year | `"DTSTART:20261001T090000\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR;UNTIL=20261231T235959"` |
-| Once, on 1 November at 8:30 | `"DTSTART:20261101T083000\nRRULE:FREQ=DAILY;COUNT=1"` |
 
 ## Writing the prompt
 
@@ -234,15 +203,10 @@ When the test run was refused something the task needs:
 
 ## Folder and output
 
-Every task needs both:
-
-- `--folder` takes a folder registered with Miyo, by the absolute path
-  `miyo folders` shows. The run starts there and writes there. The service refuses a
-  folder that isn't registered; the user adds folders in the Miyo app.
-- `--output` is the file or folder inside it that each run writes: a file to create
-  or edit, or a folder to write new files into. Give it relative to `--folder`, or as
-  an absolute path inside it. It can't be the folder itself. When the file's name
-  changes from run to run, such as today's daily note, give the folder that holds it.
+- `--folder` is the absolute path `miyo folders` shows for a registered folder. The
+  service refuses one that isn't registered.
+- `--output` can't be the folder itself. When the file's name changes from run to run,
+  such as today's daily note, give the folder that holds it.
 
 ## What to tell the user
 
@@ -274,16 +238,6 @@ Relay these plainly when you create a task; they are what the user can rely on:
   set, warn them that every run of the task will be shared publicly.
 
 ## Managing tasks
-
-```bash
-miyo task list                                          # every task, on or off, next run
-miyo task update "Loose ends" --rule "DTSTART:20261001T080000\nRRULE:FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
-miyo task update "Loose ends" --prompt "..."            # only the fields given change
-miyo task disable "Loose ends"
-miyo task enable "Loose ends"
-miyo task run "Loose ends"
-miyo task delete "Loose ends"
-```
 
 - Look up the task with `miyo task list` before changing it, and name it by id when
   two tasks could match.

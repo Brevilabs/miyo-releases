@@ -68,22 +68,13 @@ Inside a sandboxed coding agent (e.g. Codex), that local connection counts as ne
 access and may prompt for approval the first time `miyo` runs — a separate `curl`
 would only add a second prompt.
 [references/troubleshooting.md](references/troubleshooting.md) covers allowing it
-once, and pointing the CLI at a non-default or remote service (`MIYO_URL`,
-Tailscale).
+once, and pointing the CLI at a non-default service (`MIYO_URL`).
 
-## Commands at a glance
+## Commands
 
-| Command | Purpose |
-|---|---|
-| `miyo search <query>` | Semantic search over documents or saved chats |
-| `miyo files` | List indexed files, with filters |
-| `miyo folders` | List indexed folders + indexing status |
-
-(Converting a PDF to text is a separate skill — `miyo-parse`.)
-
-Global behavior: every service-backed command takes `--json` (machine-readable
-output) and `--url` (override the service URL). Exit code `0` = success, `1` =
-error. Dates are `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS`.
+`miyo search <query>` searches, `miyo files` lists indexed files, and `miyo folders`
+lists indexed folders. `miyo <command> --help` gives each one's flags. Pass `--json`
+whenever you parse the output.
 (`miyo mcp` also exists but is **deprecated** — don't use or recommend it.)
 
 ## A worked example
@@ -155,8 +146,8 @@ actually means: [references/search.md](references/search.md).
 
 Results are grouped by file: each hit shows a path and a matching snippet — an
 excerpt, not the whole file (the worked example above shows how to read the full
-file). Full flag reference, filtering by path/date, and output shapes:
-[references/search.md](references/search.md).
+file). Narrow with `--path` / `--mtime-after` / `--mtime-before` rather than adding
+words to the query.
 
 ## Browsing what's indexed
 
@@ -168,7 +159,10 @@ miyo files --title "roadmap"       # find files by title/path without a semantic
 miyo files --order-by mtime -n 10  # 10 most-recently-modified files
 ```
 
-Details and JSON shapes: [references/files-and-folders.md](references/files-and-folders.md).
+`miyo files` filters are plain substring matches, not semantic; for "files about a
+topic", use `miyo search`. In `miyo folders`, `indexed_files` below `total_files`
+means a scan is still running and search may miss files. A folder's `allow_writes`
+field is left over from an old switch and no longer decides anything.
 
 ## Guidance for agents
 
@@ -177,5 +171,3 @@ Details and JSON shapes: [references/files-and-folders.md](references/files-and-
   phrasing, and consider whether the other `--source` or looser filters would find
   it. Only once that comes back empty too, say so plainly rather than filling the
   gap from general knowledge.
-- **Use `--json` when you parse.** Human output is for display; `--json` is stable
-  for scripting.

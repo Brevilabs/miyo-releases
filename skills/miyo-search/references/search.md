@@ -1,92 +1,4 @@
-# `miyo search` — semantic search
-
-Hybrid semantic + keyword search over the user's indexed material, fused with
-Reciprocal Rank Fusion. Returns the passages most relevant to a natural-language
-query, grouped by source file.
-
-```
-miyo search [options] <query>
-```
-
-`<query>` is everything not consumed by a flag, joined with spaces — quoting is
-optional but recommended. A query is required.
-
-## Options
-
-| Flag | Default | Meaning |
-|---|---|---|
-| `-n, --limit <n>` | `20` | Max file results. Clamped to `1`–`1000`. |
-| `--source <documents\|chats>` | `documents` | Which corpus to search (see below). Ignored with `--folder`. |
-| `--folder <name>` | — | Search only this registered folder, in its own corpus. **Repeatable**; searches every folder given. |
-| `--path <text>` | — | Keep only results whose path contains `<text>` (partial, case-insensitive). **Repeatable** — multiple `--path` flags OR together. |
-| `--variant <query>` | — | Another phrasing of the same question, searched alongside `<query>` and fused into one ranking. **Repeatable**; the service searches at most 2. A value cannot start with `-`. |
-| `--mtime-after <date>` | — | Only files modified on/after the date. |
-| `--mtime-before <date>` | — | Only files modified on/before the date. |
-| `--json` | off | Emit JSON instead of formatted text. |
-| `--url <url>` | service discovery | Override the service URL (else `MIYO_URL`, else the running app, else `http://127.0.0.1:8742`). |
-| `-h, --help` | — | Print usage. |
-
-Dates accept `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS` (a `T` separator also works).
-Invalid dates error out with exit code `1`.
-
-## Sources: documents vs chats
-
-The two corpora live in separate collections. Without `--folder`, `--source` picks
-one. `--folder` searches each named folder in its own corpus and ignores `--source`,
-so naming a note folder and a chat folder returns one list, ordered by meaning.
-
-- `documents` — the user's own notes and files (the default, the primary corpus).
-- `chats` — conversations the user saved from ChatGPT (`chatgpt.com`) and Claude
-  (`claude.ai`).
-
-Choose `chats` whenever the user points at a past AI conversation ("what did I ask
-ChatGPT about…", "find the Claude chat where we…"). When unsure, run both.
-
-## Output
-
-**Human-readable (default):** results grouped by file.
-
-```
-Found 2 file result(s) from 5 chunk hit(s) (142ms):
-
-1. notes/infra/kubernetes.md
-   ...ingress controllers terminate TLS at the edge; we standardized on...
-
-2. archive/2025/ops-runbook.md
-   ...the ingress class must be set explicitly or the controller ignores...
-```
-
-No matches prints `No results found.` (exit code still `0` — an empty result is a
-valid answer, not an error).
-
-**JSON (`--json`):**
-
-```json
-{
-  "results": [
-    { "path": "notes/infra/kubernetes.md", "source": "documents", "content": "...excerpt..." },
-    { "path": "archive/2025/ops-runbook.md", "source": "documents", "content": "...excerpt..." }
-  ],
-  "count": 2,
-  "chunk_count": 5,
-  "execution_time_ms": 142
-}
-```
-
-Parse `results[]`; each entry is `{ path, source, content }`, where `source` is
-`documents` or `chats`. `count` is files returned,
-`chunk_count` is the number of underlying chunk hits before grouping.
-
-## The `content` field is a snippet, not the file
-
-Each result's `content` is the matching excerpt(s), not the whole document. The CLI
-has no read command — to get full text, **read the file off disk**: results are the
-user's real files. A result `path` starts with its folder's name, which can differ
-from the directory's own name. Find the folder in `miyo folders --json` whose `path`
-is that first segment, replace the segment with the folder's `absolute_path`, and
-open the file directly.
-
-## Query expansion: search more than one phrasing
+# Query expansion: search more than one phrasing
 
 A phrasing is embedded as a single vector and gets one keyword pass over the same
 string, so it only reaches notes written in that vocabulary. Two things follow:
@@ -101,7 +13,7 @@ string, so it only reaches notes written in that vocabulary. Two things follow:
   then with the query's own two, all in one request: a file several phrasings
   agree on rises, but never above what the user's own words matched best.
 
-### Writing the variants
+## Writing the variants
 
 Start from the user's question and produce two or three *complete* phrasings.
 Taking *"what did we decide about rate limiting the ingest API?"*:
@@ -147,7 +59,7 @@ ranking still keys off it: a file whose title literally matches those words is
 floated to the top, and the excerpt is centred on that phrasing. A `--variant`
 that merely repeats the query is dropped rather than counted twice.
 
-### When to expand
+## When to expand
 
 - **Up front**, when the ask is broad or recall-shaped: "everything I have on X",
   "did I ever write about Y", "summarize what I know about Z".
@@ -159,29 +71,3 @@ that merely repeats the query is dropped rather than counted twice.
   [troubleshooting.md](troubleshooting.md#empty-results) before answering.
 - **Skip it** when the user named a file or an exact title. That's a `miyo files`
   lookup, not a semantic sweep.
-
-## Recipes
-
-```bash
-# Top 5, scoped to a subtree, recent only
-miyo search -n 5 --path "work/" --mtime-after 2026-01-01 "migration plan"
-
-# OR across two subtrees
-miyo search --path "notes/" --path "archive/" "postmortem"
-
-# A past ChatGPT conversation, parsed
-miyo search --source chats --json "the prompt we wrote for the classifier"
-
-# Against a non-default service (e.g. a dev instance)
-miyo search --url http://127.0.0.1:9999 "test query"
-```
-
-## Tips
-
-- Phrase queries by **intent**, not keywords — semantic search rewards
-  natural-language descriptions of what you're looking for.
-- Narrow with `--path` / `--mtime-*` rather than overloading the query string.
-- Widen with `--variant` rather than a longer query; see
-  [Query expansion](#query-expansion-search-more-than-one-phrasing).
-- Raise `-n` when you need recall (feeding many candidates to a summarizer); keep
-  it low when you want the single best hit.
