@@ -67,8 +67,8 @@ Causes, most likely first:
 A `0`-exit `No results found.` is a legitimate answer. Before concluding the user
 has nothing relevant:
 
-- Check the corpus — was the question about a past AI chat? Retry with
-  `--source chats` (a `--folder` search ignores it; name the chat folder instead).
+- Check the corpus — a `--source` or `--folder` search covers only part of it.
+  Retry without them to search notes and chats together.
 - Check coverage — `miyo folders`. If `indexed_files` < `total_files` or
   `status` is still `indexing`, the index is incomplete; wait and retry. Files
   counted in `error_files` failed to index and never appear in search, so if

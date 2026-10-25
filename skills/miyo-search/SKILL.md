@@ -103,22 +103,20 @@ file when the snippet is thin* — is the core of using Miyo well.
 ## The main workflow: search
 
 ```bash
-miyo search "kubernetes ingress notes"          # default: the user's documents
+miyo search "kubernetes ingress notes"          # default: documents and chats together
 miyo search --source chats "tax question I asked ChatGPT"
 miyo search -n 5 --json "quarterly planning"    # top 5, parsed programmatically
 ```
 
-Two **separate** corpora. Without `--folder`, `--source` picks one:
+Two corpora, searched together by default and returned in one list ordered by
+meaning; each `--json` result carries its `source`. `--source` narrows to one:
 
-- `documents` (default) — the user's own notes and files.
-- `chats` — saved ChatGPT and Claude conversations. Use this whenever the user
+- `documents` — the user's own notes and files.
+- `chats` — saved ChatGPT and Claude conversations. Use this when the user
   refers to a past AI conversation ("the chat where we designed the schema").
 
-If you're unsure which corpus holds the answer, search `documents`, then `chats`.
-
-`--folder <name>` (repeatable) searches each named folder in its own corpus and
-ignores `--source`. Name a note folder and a chat folder to get both in one list,
-ordered by meaning; each `--json` result carries its `source`.
+`--folder <name>` (repeatable) searches only the named folders, each in its own
+corpus, and ignores `--source`.
 
 ### Widen recall with query variants
 
@@ -168,6 +166,6 @@ field is left over from an old switch and no longer decides anything.
 
 - **Don't fabricate.** Treat results as the user's ground truth and cite the file
   path a fact came from. If search returns nothing, first retry with a different
-  phrasing, and consider whether the other `--source` or looser filters would find
-  it. Only once that comes back empty too, say so plainly rather than filling the
+  phrasing, and consider whether dropping `--source` or loosening filters would
+  find it. Only once that comes back empty too, say so plainly rather than filling the
   gap from general knowledge.

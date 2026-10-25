@@ -1,8 +1,8 @@
 ---
 name: miyo-parse
 description: >-
-  Convert a document (PDF, EPUB, or Word .docx) or the text in an image (PNG, JPEG)
-  into Markdown/plain text with the local `miyo parse` CLI, so you can read, quote, or
+  Convert a document (PDF, EPUB, or Word .docx) or the text in an image (PNG, JPEG, WebP,
+  AVIF, JPEG XL) into Markdown/plain text with the local `miyo parse` CLI, so you can read, quote, or
   feed its contents onward. Reach for this whenever the user points at one of those
   and wants its text — "read this PDF", "what does this contract say", "pull the text
   out of report.pdf", "convert this PDF to Markdown", "summarize this PDF", "read this
@@ -15,12 +15,12 @@ description: >-
 
 # `miyo parse` — document → Markdown/text
 
-`miyo parse <file>` turns a PDF, EPUB, Word `.docx`, PNG, or JPEG into Markdown/plain
-text and prints it. The file can be anywhere on disk, and the Miyo app doesn't need to
+`miyo parse <file>` turns a PDF, EPUB, Word `.docx`, or a PNG, JPEG, WebP, AVIF, or JPEG XL
+(`.jxl`) image into Markdown/plain text and prints it. The file can be anywhere on disk, and the Miyo app doesn't need to
 be running. Scanned PDF pages and images are read with OCR on the user's machine;
 nothing is uploaded. EPUB chapters come out in reading order. A `.docx` keeps its
 headings, lists, and tables, and reads with tracked changes accepted. Legacy `.doc`,
-HEIC, GIF, TIFF, and WebP are **not** supported.
+HEIC, GIF, TIFF, and animated WebP are **not** supported.
 
 ## Prerequisite: invoke `miyo` by its full path
 
