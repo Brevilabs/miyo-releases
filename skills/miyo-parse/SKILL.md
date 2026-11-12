@@ -1,12 +1,13 @@
 ---
 name: miyo-parse
 description: >-
-  Convert a document (PDF, EPUB, or Word .docx) or the text in an image (PNG, JPEG, WebP,
+  Convert a document (PDF, EPUB, Word .docx, or PowerPoint .pptx) or the text in an image (PNG, JPEG, WebP,
   AVIF, JPEG XL) into Markdown/plain text with the local `miyo parse` CLI, so you can read, quote, or
   feed its contents onward. Reach for this whenever the user points at one of those
   and wants its text — "read this PDF", "what does this contract say", "pull the text
   out of report.pdf", "convert this PDF to Markdown", "summarize this PDF", "read this
   ebook/epub", "what's in book.epub", "read this Word doc", "what's in proposal.docx",
+  "what's in this deck", "summarize slides.pptx",
   "what does this screenshot say", "copy the text out of receipt.jpg". Works on any file path
   and needs **no** running Miyo app or service —
   it parses in-process. This is document *conversion*, distinct from searching the
@@ -15,12 +16,14 @@ description: >-
 
 # `miyo parse` — document → Markdown/text
 
-`miyo parse <file>` turns a PDF, EPUB, Word `.docx`, or a PNG, JPEG, WebP, AVIF, or JPEG XL
+`miyo parse <file>` turns a PDF, EPUB, Word `.docx`, PowerPoint `.pptx`, or a PNG, JPEG, WebP, AVIF, or JPEG XL
 (`.jxl`) image into Markdown/plain text and prints it. The file can be anywhere on disk, and the Miyo app doesn't need to
 be running. Scanned PDF pages and images are read with OCR on the user's machine;
 nothing is uploaded. EPUB chapters come out in reading order. A `.docx` keeps its
-headings, lists, and tables, and reads with tracked changes accepted. Legacy `.doc`,
-HEIC, GIF, TIFF, and animated WebP are **not** supported.
+headings, lists, and tables, and reads with tracked changes accepted. A `.pptx` comes
+out one `## <slide title>` section per slide in deck order (`## Slide N` when untitled),
+with bullets, tables, and speaker notes. Legacy `.doc` and `.ppt`, HEIC, GIF, TIFF, and
+animated WebP are **not** supported.
 
 ## Prerequisite: invoke `miyo` by its full path
 
@@ -62,8 +65,8 @@ reinstalling Miyo restores it.
 ## Reading the `--json` result
 
 - `page_count` counts pages for a PDF, chapters for an EPUB, and blocks (paragraphs,
-  headings, list items, tables) for a `.docx`, which has no fixed pagination. An image
-  is one page.
+  headings, list items, tables) for a `.docx`, which has no fixed pagination, and
+  slides for a `.pptx`. An image is one page.
 - `failed_page_count` above 0, or a non-empty `unreadable_pages`, means the `text` is
   partial. `ocr_pages` lists the pages whose text came from OCR.
 - `ocr_error` is set when OCR failed on a PDF that also has typed text. Miyo keeps the
